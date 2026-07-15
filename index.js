@@ -6,7 +6,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
 const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
-  "utf-8"
+  "utf-8",
 );
 const serviceAccount = JSON.parse(decoded);
 admin.initializeApp({
@@ -20,8 +20,8 @@ app.use(
   cors({
     origin: [process.env.CLIENT_DOMAIN, process.env.DEVELOPMENT_URL],
     credentials: true,
-    optionSuccessStatus: 200,
-  })
+    optionsSuccessStatus: 200,
+  }),
 );
 app.use(express.json());
 
@@ -138,7 +138,7 @@ async function run() {
             .status(500)
             .send({ message: "Failed to update role", error: err.message });
         }
-      }
+      },
     );
 
     //get a user role [common access]
@@ -161,10 +161,10 @@ async function run() {
             $set: {
               fraud: true,
             },
-          }
+          },
         );
         res.send(result);
-      }
+      },
     );
 
     //remove fraud field to the vendor [admin only]
@@ -181,10 +181,10 @@ async function run() {
             $unset: {
               fraud: "",
             },
-          }
+          },
         );
         res.send(result);
-      }
+      },
     );
 
     //Update advertise status and filter <= 6 tickets for advertise [admin only]
@@ -213,7 +213,7 @@ async function run() {
 
         const result = await ticketsCollection.updateOne(filter, updateDoc);
         res.send(result);
-      }
+      },
     );
 
     //get advertise tickets from database [common access]
@@ -256,16 +256,56 @@ async function run() {
       }
     });
 
-    //get all approved and non fraud ticket Data from Database [common access]
+    // Get all approved tickets with search & filter [common access]
     app.get("/approved-tickets", async (req, res) => {
       try {
-        const result = await ticketsCollection
-          .find({ status: "approved" })
-          .toArray();
+        const { from, to, date, operator, busType, maxPrice } = req.query;
+
+        const query = { status: "approved" };
+
+        if (operator) {
+          query.operator = {
+            $regex: operator,
+            $options: "i",
+          };
+        }
+
+        if (from) {
+          query.from = {
+            $regex: `^${from}$`,
+            $options: "i",
+          };
+        }
+
+        if (to) {
+          query.to = {
+            $regex: `^${to}$`,
+            $options: "i",
+          };
+        }
+
+        if (date) {
+          query.date = date;
+        }
+
+        if (busType) {
+          query.busType = busType;
+        }
+
+        if (maxPrice) {
+          query.price = {
+            $lte: Number(maxPrice),
+          };
+        }
+
+        const result = await ticketsCollection.find(query).toArray();
 
         res.send(result);
       } catch (error) {
-        res.status(500).send({ message: "Error fetching tickets", error });
+        res.status(500).send({
+          success: false,
+          message: "Error fetching tickets",
+        });
       }
     });
 
@@ -302,7 +342,7 @@ async function run() {
         } catch (error) {
           res.status(500).send({ message: "Internal Server Error" });
         }
-      }
+      },
     );
 
     //get 1 ticket Data from Database [common access]
@@ -370,7 +410,7 @@ async function run() {
             .status(500)
             .send({ message: "Failed to fetch booked tickets with details." });
         }
-      }
+      },
     );
 
     //get all payment data from database [customer only]
@@ -397,7 +437,7 @@ async function run() {
             .status(500)
             .send({ message: "Error fetching transactions", error });
         }
-      }
+      },
     );
 
     //get all added ticket of a vendor, verify vendor using email [vendor only]
@@ -411,7 +451,7 @@ async function run() {
           .find({ "vendor.email": email })
           .toArray();
         res.send(result);
-      }
+      },
     );
 
     //get all booking request data for a verified vendor [vendor only]
@@ -452,7 +492,7 @@ async function run() {
           ])
           .toArray();
         res.send(result);
-      }
+      },
     );
 
     // update the booked ticket status by a verified vendor [vendor only]
@@ -474,7 +514,7 @@ async function run() {
 
           const result = await bookedTicketsCollection.updateOne(
             query,
-            updateDoc
+            updateDoc,
           );
 
           if (result.modifiedCount > 0) {
@@ -485,7 +525,7 @@ async function run() {
         } catch (error) {
           res.status(500).send({ message: "Internal Server Error" });
         }
-      }
+      },
     );
 
     // Update a ticket details [vendor only]
@@ -525,7 +565,7 @@ async function run() {
           console.error("Update Error:", error);
           res.status(500).send({ message: "Internal server error" });
         }
-      }
+      },
     );
 
     //delete a ticket [vendor only]
@@ -552,7 +592,7 @@ async function run() {
           console.error("Delete Error:", error);
           res.status(500).send({ message: "Internal server error" });
         }
-      }
+      },
     );
 
     //get all Revenue data for a vendor [vendor only]
@@ -597,7 +637,7 @@ async function run() {
           console.error("Revenue Error:", error);
           res.status(500).send({ message: "Internal Server Error", error });
         }
-      }
+      },
     );
 
     //Payment endPint
@@ -672,12 +712,12 @@ async function run() {
           },
           {
             $inc: { quantity: -soldQuantity },
-          }
+          },
         );
 
         await bookedTicketsCollection.updateOne(
           { _id: new ObjectId(session?.metadata?.bookingId) },
-          { $set: { status: "Paid" } }
+          { $set: { status: "Paid" } },
         );
 
         return res.send({
