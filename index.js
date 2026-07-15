@@ -650,7 +650,7 @@ async function run() {
             price_data: {
               currency: "bdt",
               product_data: {
-                name: paymentInfo?.title,
+                name: paymentInfo?.operator,
                 images: [paymentInfo?.image],
               },
               unit_amount: paymentInfo?.price * 100,
