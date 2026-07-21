@@ -425,7 +425,7 @@ async function run() {
             .find({ "customer.email": email })
             .project({
               transactionId: 1,
-              title: 1,
+              operator: 1,
               amount: 1,
               date: 1,
             })
@@ -486,7 +486,7 @@ async function run() {
                 status: 1,
                 quantity: 1,
                 ticketPrice: "$joinedTicket.price",
-                ticketTitle: "$joinedTicket.title",
+                operatorName: "$joinedTicket.operator",
               },
             },
           ])
@@ -697,7 +697,7 @@ async function run() {
             name: session.metadata.customer_name,
           },
           vendor: ticket.vendor,
-          title: ticket.title,
+          operator: ticket.operator,
           quantity: soldQuantity,
           amount: session.amount_total / 100,
           date: new Date().toISOString(),
